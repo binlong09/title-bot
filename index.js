@@ -60,7 +60,6 @@ client.on(Events.MessageCreate, async (msg) => {
         const author = msg.author.tag;
         const x = content[1];
         const y = content[2];
-        console.log(author);
         if (
             ["architect", "duke", "scientist"].some(
                 (choice) => title === choice
@@ -88,12 +87,14 @@ client.on(Events.MessageCreate, async (msg) => {
 
 // Check and process duke's queue every 3 seconds
 setInterval(async () => {
-    console.log(currentDuke);
+    console.log("duke queue: ", dukeQueue);
+    console.log("current duke: ", currentDuke);
     const channel = client.channels.cache.find(
         (channel) => channel.name === CHANNEL_NAME
     );
     // current duke is empty
-    if (isEmpty(currentDuke) && currentDuke.length > 0) {
+    if (isEmpty(currentDuke) && dukeQueue.length > 0) {
+        console.log("current duke is empty");
         currentDuke = dukeQueue.pop();
         currentDuke = await handleAtLeastOneRequesterInQueue(
             channel,
@@ -104,11 +105,7 @@ setInterval(async () => {
     }
 
     // current duke is not empty but timer expired
-    if (
-        !isEmpty(currentDuke) &&
-        isTimerExpired(currentDuke.expiredAt) &&
-        currentDuke.length > 0
-    ) {
+    if (!isEmpty(currentDuke) && isTimerExpired(currentDuke.expiredAt)) {
         // remove Done button for previous duke
         const messageId = currentDuke.messageId;
         const msg = await channel.messages.fetch(messageId);
@@ -118,14 +115,7 @@ setInterval(async () => {
             )} Your duke title has expired.`,
             components: [],
         });
-        // there is another requester in the queue
-        currentDuke = dukeQueue.pop();
-        currentDuke = await handleAtLeastOneRequesterInQueue(
-            channel,
-            "duke",
-            currentDuke
-        );
-        // there is no other requester in the queue
+        currentDuke = {};
     }
 }, 3000);
 
@@ -190,6 +180,9 @@ const handleAtLeastOneRequesterInQueue = async (
     return currentTitle;
 };
 
+// --------------------------------------------------------------------------------
+// ------------------Handle slash command-------------------------
+// --------------------------------------------------------------------------------
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
